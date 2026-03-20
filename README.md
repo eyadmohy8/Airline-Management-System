@@ -1,0 +1,1 @@
+[![Security Scan](https://github.com/eyadmohy8/Airline-Management-System/actions/workflows/security.yml/badge.svg)](https://github.com/eyadmohy8/Airline-Management-System/actions/workflows/security.yml)
