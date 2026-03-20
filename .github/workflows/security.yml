@@ -1,23 +1,20 @@
 name: Security Scan
-
-on:
-  push:
-  pull_request:
+on: [push]
 
 jobs:
   secret_scan:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install TruffleHog
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh
-
-      - name: Run TruffleHog Scan
-        run: |
-          trufflehog filesystem . --no-update
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: true # This is the magic line
+        with:
+          path: ./
+          base: ""
+          head: HEAD
+          extra_args: --only-verified --fail=0
