@@ -7,8 +7,7 @@ on:
     branches: ["main", "develop"]
 
 jobs:
-  # JOB 1: Security Scan (Checks for API Keys/Secrets)
-  # If a secret is found, this job will now FAIL (Red X)
+  # JOB 1: Security Scan
   security_scan:
     name: Scan for Secrets
     runs-on: ubuntu-latest
@@ -26,8 +25,7 @@ jobs:
           head: HEAD
           extra_args: --only-verified
 
-  # JOB 2: Flutter Analyzer (Checks for Youssef's Syntax Errors)
-  # If there is a typo or missing semicolon, this job will FAIL (Red X)
+  # JOB 2: Flutter Analyzer (CRITICAL: Must be aligned with security_scan)
   flutter_check:
     name: Flutter Lint & Analyze
     runs-on: ubuntu-latest
