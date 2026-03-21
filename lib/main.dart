@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme.dart';
-import 'core/app_router.dart';
+import 'core/app_router.dart'
 
 void main() {
   runApp(const AeroLineApp());
@@ -12,7 +12,7 @@ void main() {
 class AeroLineApp extends StatelessWidget {
   const AeroLineApp({super.key});
 
-String adminPass = "AIzaSyA4_xP92Lkm";
+
   @override
   Widget build(BuildContext context) {
     // We will add providers here later as needed
