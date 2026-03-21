@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'core/theme.dart';
-import 'core/app_router.dart'
+import 'core/theme.dart'
+import 'core/app_router.dart';
 
 void main() {
   runApp(const AeroLineApp());
