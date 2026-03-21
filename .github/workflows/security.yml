@@ -7,7 +7,8 @@ on:
     branches: ["main", "develop"]
 
 jobs:
-  # JOB 1: Security Scan (TruffleHog)
+  # JOB 1: Security Scan (Checks for API Keys/Secrets)
+  # If a secret is found, this job will now FAIL (Red X)
   security_scan:
     name: Scan for Secrets
     runs-on: ubuntu-latest
@@ -19,14 +20,14 @@ jobs:
 
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
-        continue-on-error: true
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --debug --only-verified
+          extra_args: --only-verified
 
-  # JOB 2: Flutter Analyzer (To catch Youssef's coding errors)
+  # JOB 2: Flutter Analyzer (Checks for Youssef's Syntax Errors)
+  # If there is a typo or missing semicolon, this job will FAIL (Red X)
   flutter_check:
     name: Flutter Lint & Analyze
     runs-on: ubuntu-latest
