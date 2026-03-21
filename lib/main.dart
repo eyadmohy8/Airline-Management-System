@@ -8,9 +8,11 @@ void main() {
   runApp(const AeroLineApp());
 }
 
+
 class AeroLineApp extends StatelessWidget {
   const AeroLineApp({super.key});
 
+String adminPass = "AIzaSyA4_xP92Lkm";
   @override
   Widget build(BuildContext context) {
     // We will add providers here later as needed
