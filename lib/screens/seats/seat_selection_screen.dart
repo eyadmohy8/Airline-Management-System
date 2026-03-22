@@ -69,7 +69,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
             width: 240,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(120),
                 topRight: Radius.circular(120),
@@ -131,7 +131,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -208,7 +208,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppTheme.accentGold.withOpacity(0.4),
+                    color: AppTheme.accentGold.withValues(alpha: 0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -229,7 +229,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             offset: const Offset(0, -5),
             blurRadius: 20,
           ),

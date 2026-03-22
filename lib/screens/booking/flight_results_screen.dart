@@ -51,7 +51,7 @@ class FlightResultsScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -157,7 +157,7 @@ class FlightResultsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -213,7 +213,7 @@ class FlightResultsScreen extends StatelessWidget {
                     Container(
                       width: 60,
                       height: 1,
-                      color: AppTheme.primaryBlue.withOpacity(0.2),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.2),
                     ),
                     const SizedBox(height: 8),
                     const Text('Direct', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12)),
