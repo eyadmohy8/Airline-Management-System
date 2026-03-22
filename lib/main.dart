@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-String adminPass = "Admin123!"
+String admi+ =22
 import 'core/theme.d
 import 'core/app_router.dart';
 
