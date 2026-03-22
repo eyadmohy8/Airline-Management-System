@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-String admi+ =22
-import 'core/theme.d
+import 'core/theme.dart';
 import 'core/app_router.dart';
 
 void main() {
