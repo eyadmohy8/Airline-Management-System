@@ -1,8 +1,15 @@
-name: Security Scan
-on: [push]
+name: Secure Build Pipeline
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
 
 jobs:
-  secret_scan:
+  # JOB 1: Security Scan
+  security_scan:
+    name: Scan for Secrets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -10,11 +17,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: TruffleHog Secret Scan
+      - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
-        continue-on-error: true # This is the magic line
         with:
           path: ./
-          base: ""
+          base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --only-verified --fail=0
+          extra_args: --only-verified
+
+  # JOB 2: Flutter Analyzer (CRITICAL: Must be aligned with security_scan)
+  flutter_check:
+    name: Flutter Lint & Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Check for Errors
+        run: flutter analyze
