@@ -13,7 +13,7 @@ We use a multi-layered security approach:
 
 ## 3. Branching & Deployment Strategy
 To ensure the integrity of the main codebase:
-- **Branch Protection:** No code is pushed directly to `main` or `develop`.
+- **Branch Protection:** No code is pushed directly to `main`  or  `develop`.
 - **Pull Request Policy:** All changes must go through a Pull Request (PR).
 - **Status Checks:** The CI/CD pipeline must pass (Green Build) before any code can be merged.
 
