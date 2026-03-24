@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "612324582325",
+    "project_id": "airlinemanagment-6b559",
+    "storage_bucket": "airlinemanagment-6b559.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:612324582325:android:5f1567259b4ec34efcaffc",
+        "android_client_info": {
+          "package_name": "com.airline.airline_frontend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "612324582325-vi4cefs7u6vqonq19pcea7g0a39v1f1i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.airline.airline_frontend",
+            "certificate_hash": "85f0091210b0d07d83e2dfbab94fa9f7b03a0ab2"
+          }
+        },
+        {
+          "client_id": "612324582325-mvsjv3k2f7cftbuneim6oe9j2e9ee1hj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFI1WsDeJwFRhkVniUMED1Mgusk4aZ0mk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "612324582325-mvsjv3k2f7cftbuneim6oe9j2e9ee1hj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
