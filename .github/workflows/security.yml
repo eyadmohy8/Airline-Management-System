@@ -7,10 +7,12 @@ on:
     branches: ["main", "develop"]
 
 jobs:
-  # JOB 1: Security Scan
+
+  # 🔐 JOB 1: Secret Scanning
   security_scan:
     name: Scan for Secrets
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,10 +27,12 @@ jobs:
           head: HEAD
           extra_args: --only-verified
 
-  # JOB 2: Flutter Analyzer (CRITICAL: Must be aligned with security_scan)
+  # 🟢 JOB 2: Flutter Checks
   flutter_check:
-    name: Flutter Lint & Analyze
+    name: Flutter Lint, Test & Build
     runs-on: ubuntu-latest
+    needs: security_scan   
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,5 +45,34 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Check for Errors
+      - name: Analyze Code
         run: flutter analyze
+
+      - name: Run Tests
+        run: flutter test
+
+      - name: Build APK
+        run: flutter build apk --release
+
+  # 🟡 JOB 3: Backend Security
+  backend_security:
+    name: Backend Security Scan
+    runs-on: ubuntu-latest
+    needs: flutter_check  
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend 
+        run: npm install
+
+      - name: Run NPM Audit
+        working-directory: ./backend
+        run: npm audit --audit-level=high
