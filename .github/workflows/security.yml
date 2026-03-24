@@ -2,7 +2,7 @@ name: Secure Build Pipeline
 
 on:
   push:
-    branches: ["main", "develop", "feature/**"]
+    branches: ["main", "develop", "feature/booking"]
   pull_request:
     branches: ["main", "develop"]
 
