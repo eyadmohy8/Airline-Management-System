@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../providers/booking_provider.dart';
+import '../../models/booking.dart';
 
 class PassengerDetailsScreen extends StatefulWidget {
-  final String selectedSeat;
-  const PassengerDetailsScreen({super.key, required this.selectedSeat});
+  const PassengerDetailsScreen({super.key});
 
   @override
   State<PassengerDetailsScreen> createState() => _PassengerDetailsScreenState();
@@ -13,9 +17,96 @@ class PassengerDetailsScreen extends StatefulWidget {
 
 class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passportController = TextEditingController();
+  
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passportController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _processBooking() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    final provider = context.read<BookingProvider>();
+    final flight = provider.selectedFlight;
+    final seat = provider.selectedSeat;
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (flight == null || seat == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Flight or seat is missing.')));
+      return;
+    }
+    
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be logged in to book.')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final db = FirebaseFirestore.instance;
+      
+      // 1. Create Booking record
+      final passengerDetails = PassengerDetails()
+        ..name = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+        ..email = _emailController.text.trim()
+        ..passport = _passportController.text.trim();
+
+      final booking = Booking(
+        userId: user.uid,
+        flightId: flight.id,
+        passenger: passengerDetails,
+        seatNumber: seat,
+        bookingDate: DateTime.now(),
+        totalPaid: flight.price,
+        status: 'CONFIRMED',
+      );
+
+      final batch = db.batch();
+      final newBookingRef = db.collection('bookings').doc();
+      batch.set(newBookingRef, booking.toMap());
+      
+      // 2. Add seat to flight's bookedSeats
+      final flightRef = db.collection('flights').doc(flight.id);
+      batch.update(flightRef, {
+        'bookedSeats': FieldValue.arrayUnion([seat]),
+        'availableSeats': FieldValue.increment(-1),
+      });
+
+      // Commit transaction
+      await batch.commit();
+
+      if (mounted) {
+        provider.clearBooking();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking Successful!')));
+        context.go('/search');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booking failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final flight = context.watch<BookingProvider>().selectedFlight;
+    final seat = context.watch<BookingProvider>().selectedSeat ?? '';
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
@@ -24,36 +115,33 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator()) 
+        : SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildTripSummary(),
+              _buildTripSummary(seat, flight?.flightNumber ?? ''),
               const SizedBox(height: 32),
-              const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: SystemFonts.w700)),
+              const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildTextField('First Name', FontAwesomeIcons.user),
+              _buildTextField('First Name', FontAwesomeIcons.user, controller: _firstNameController),
               const SizedBox(height: 16),
-              _buildTextField('Last Name', FontAwesomeIcons.user),
+              _buildTextField('Last Name', FontAwesomeIcons.user, controller: _lastNameController),
               const SizedBox(height: 16),
-              _buildTextField('Email Address', FontAwesomeIcons.envelope, keyboardType: TextInputType.emailAddress),
+              _buildTextField('Email Address', FontAwesomeIcons.envelope, controller: _emailController, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 16),
-              _buildTextField('Phone Number', FontAwesomeIcons.phone, keyboardType: TextInputType.phone),
+              _buildTextField('Phone Number', FontAwesomeIcons.phone, controller: _phoneController, keyboardType: TextInputType.phone),
               const SizedBox(height: 32),
-              const Text('Travel Documents', style: TextStyle(fontSize: 18, fontWeight: SystemFonts.w700)),
+              const Text('Travel Documents', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildTextField('Passport Number', FontAwesomeIcons.passport),
+              _buildTextField('Passport Number', FontAwesomeIcons.passport, controller: _passportController),
               const SizedBox(height: 48),
               ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    // Normally we'd save the booking. For this demo, we go straight to manifest dashboard to show admin view.
-                    context.go('/manifest');
-                  }
-                },
+                onPressed: _processBooking,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.accentGold,
                   foregroundColor: Colors.black87,
@@ -68,7 +156,7 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     );
   }
 
-  Widget _buildTripSummary() {
+  Widget _buildTripSummary(String seat, String flightNumber) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -91,19 +179,19 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
               const Text('Seat Number', style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
               const SizedBox(height: 4),
               Text(
-                widget.selectedSeat,
+                seat,
                 style: const TextStyle(color: AppTheme.primaryBlue, fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('Flight', style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
-              SizedBox(height: 4),
+              const Text('Flight', style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
+              const SizedBox(height: 4),
               Text(
-                'AL-421',
-                style: TextStyle(color: AppTheme.primaryBlue, fontSize: 24, fontWeight: FontWeight.bold),
+                flightNumber,
+                style: const TextStyle(color: AppTheme.primaryBlue, fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -112,8 +200,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
     );
   }
 
-  Widget _buildTextField(String label, IconData icon, {TextInputType? keyboardType}) {
+  Widget _buildTextField(String label, IconData icon, {TextInputType? keyboardType, required TextEditingController controller}) {
     return TextFormField(
+      controller: controller,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
@@ -127,7 +216,4 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       },
     );
   }
-}
-class SystemFonts {
-  static const w700 = FontWeight.w700;
 }

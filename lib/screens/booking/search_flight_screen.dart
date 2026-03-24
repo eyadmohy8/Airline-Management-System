@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/theme.dart';
 
 class SearchFlightScreen extends StatefulWidget {
@@ -154,7 +156,16 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
           // Search Button
           ElevatedButton(
             onPressed: () {
-              context.push('/search/results');
+              final origin = _originController.text.trim();
+              final destination = _destinationController.text.trim();
+              if (origin.isEmpty || destination.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter origin and destination')),
+                );
+                return;
+              }
+              final queryParams = {'origin': origin, 'destination': destination};
+              context.push(Uri(path: '/search/results', queryParameters: queryParams).toString());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentGold,
@@ -360,3 +371,4 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
     );
   }
 }
+

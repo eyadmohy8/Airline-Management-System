@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../providers/booking_provider.dart';
 
 class SeatSelectionScreen extends StatefulWidget {
   const SeatSelectionScreen({super.key});
@@ -10,21 +12,15 @@ class SeatSelectionScreen extends StatefulWidget {
 }
 
 class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
-  // Using a simple set to keep track of selected seats
   final Set<String> _selectedSeats = {};
-  
-  // Mocking taken seats
-  final Set<String> _takenSeats = {'1A', '1C', '2B', '4D', '5A', '7C', '7D'};
 
-  void _toggleSeat(String seatId) {
-    if (_takenSeats.contains(seatId)) return;
+  void _toggleSeat(String seatId, List<String> takenSeats) {
+    if (takenSeats.contains(seatId)) return;
     
     setState(() {
       if (_selectedSeats.contains(seatId)) {
         _selectedSeats.remove(seatId);
       } else {
-        // Limiting to 1 seat selection for simplicity in this demo,
-        // can be changed to match number of passengers.
         if (_selectedSeats.isNotEmpty) {
           _selectedSeats.clear();
         }
@@ -35,10 +31,20 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final flight = context.watch<BookingProvider>().selectedFlight;
+    if (flight == null) {
+      return Scaffold(
+        appBar: AppBar(backgroundColor: AppTheme.primaryBlue),
+        body: const Center(child: Text('No flight selected')),
+      );
+    }
+    
+    final takenSeats = flight.bookedSeats;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        title: const Text('Select Seat', style: TextStyle(color: Colors.white)),
+        title: Text('Select Seat - ${flight.flightNumber}', style: const TextStyle(color: Colors.white, fontSize: 16)),
         backgroundColor: AppTheme.primaryBlue,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
@@ -48,7 +54,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           _buildAirplaneHeader(),
           _buildSeatLegend(),
           Expanded(
-            child: _buildSeatMap(),
+            child: _buildSeatMap(takenSeats),
           ),
           _buildBottomBar(context),
         ],
@@ -64,7 +70,6 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // A curved shape to represent the nose of the plane
           Container(
             width: 240,
             height: 100,
@@ -119,7 +124,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     );
   }
 
-  Widget _buildSeatMap() {
+  Widget _buildSeatMap(List<String> takenSeats) {
     return Container(
       width: 280,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -138,7 +143,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         ],
       ),
       child: ListView.builder(
-        itemCount: 15, // 15 rows
+        itemCount: 15,
         itemBuilder: (context, index) {
           final row = index + 1;
           return Padding(
@@ -146,11 +151,10 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildSeat('$row:A'),
+                _buildSeat('$row:A', takenSeats),
                 const SizedBox(width: 12),
-                _buildSeat('$row:B'),
+                _buildSeat('$row:B', takenSeats),
                 
-                // Aisle row indicator
                 SizedBox(
                   width: 40,
                   child: Center(
@@ -161,9 +165,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                   ),
                 ),
                 
-                _buildSeat('$row:C'),
+                _buildSeat('$row:C', takenSeats),
                 const SizedBox(width: 12),
-                _buildSeat('$row:D'),
+                _buildSeat('$row:D', takenSeats),
             ],
           ));
         },
@@ -171,12 +175,11 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     );
   }
 
-  Widget _buildSeat(String rawId) {
-    // Format to 1A, 2B etc.
+  Widget _buildSeat(String rawId, List<String> takenSeats) {
     final parts = rawId.split(':');
     final seatId = '${parts[0]}${parts[1]}';
     
-    final isTaken = _takenSeats.contains(seatId);
+    final isTaken = takenSeats.contains(seatId);
     final isSelected = _selectedSeats.contains(seatId);
 
     Color color = Colors.white;
@@ -191,7 +194,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     }
 
     return GestureDetector(
-      onTap: () => _toggleSeat(seatId),
+      onTap: () => _toggleSeat(seatId, takenSeats),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         width: 42,
@@ -255,14 +258,15 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           ElevatedButton(
             onPressed: _selectedSeats.isNotEmpty 
               ? () {
-                  context.push('/passenger_details', extra: _selectedSeats.first);
+                  context.read<BookingProvider>().selectSeat(_selectedSeats.first);
+                  context.push('/passenger_details');
                 } 
               : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryBlue,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
-            child: const Text('Continue', style: TextStyle(fontSize: 16)),
+            child: const Text('Continue', style: TextStyle(color: Colors.white, fontSize: 16)),
           ),
         ],
       ),

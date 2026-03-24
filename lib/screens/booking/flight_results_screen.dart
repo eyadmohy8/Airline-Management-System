@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme.dart';
+import '../../models/flight.dart';
+import '../../providers/booking_provider.dart';
 
 class FlightResultsScreen extends StatelessWidget {
-  const FlightResultsScreen({super.key});
+  final String origin;
+  final String destination;
+
+  const FlightResultsScreen({
+    super.key,
+    required this.origin,
+    required this.destination,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,23 +29,46 @@ class FlightResultsScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          _buildRouteHeader(context),
+          _buildRouteHeader(context, origin, destination),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(24),
-              itemCount: 4,
-              itemBuilder: (context, index) {
-                final prices = [r'$450', r'$520', r'$600', r'$850'];
-                final times = ['08:00 AM', '11:30 AM', '02:15 PM', '06:45 PM'];
-                final arrivals = ['10:30 AM', '02:00 PM', '04:45 PM', '09:15 PM'];
-                final airlines = ['AeroLine', 'AeroLine Express', 'AeroLine Elite', 'AeroLine'];
-                return _buildFlightCard(
-                  context: context,
-                  airline: airlines[index],
-                  departureTime: times[index],
-                  arrivalTime: arrivals[index],
-                  price: prices[index],
-                  duration: '2h 30m',
+            child: StreamBuilder<QuerySnapshot>(
+              // Fetch flights matching origin and destination
+              stream: FirebaseFirestore.instance
+                  .collection('flights')
+                  .where('departureCity', isEqualTo: origin)
+                  .where('destinationCity', isEqualTo: destination)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                final docs = snapshot.data?.docs ?? [];
+                if (docs.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text(
+                        'No flights found for $origin to $destination.\n\n(Tip: Try "New York" to "London" if you seeded the DB)',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final flight = Flight.fromFirestore(docs[index]);
+                    return _buildFlightCard(
+                      context: context,
+                      flight: flight,
+                    );
+                  },
                 );
               },
             ),
@@ -44,7 +78,12 @@ class FlightResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRouteHeader(BuildContext context) {
+  Widget _buildRouteHeader(BuildContext context, String orig, String dest) {
+    String safeCode(String city) {
+      if (city.isEmpty) return '---';
+      return city.substring(0, city.length > 3 ? 3 : city.length).toUpperCase();
+    }
+
     return Container(
       color: AppTheme.primaryBlue,
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -57,9 +96,9 @@ class FlightResultsScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildAirportCode('NYC', 'New York'),
+            _buildAirportCode(safeCode(orig), orig),
             _buildFlightPath(),
-            _buildAirportCode('LHR', 'London'),
+            _buildAirportCode(safeCode(dest), dest),
           ],
         ),
       ),
@@ -92,7 +131,7 @@ class FlightResultsScreen extends StatelessWidget {
         child: Column(
           children: [
             const Text(
-              '14 Oct, 1 Passenger',
+              '1 Passenger',
               style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
             const SizedBox(height: 8),
@@ -139,15 +178,20 @@ class FlightResultsScreen extends StatelessWidget {
 
   Widget _buildFlightCard({
     required BuildContext context,
-    required String airline,
-    required String departureTime,
-    required String arrivalTime,
-    required String price,
-    required String duration,
+    required Flight flight,
   }) {
+    String formatTime(DateTime time) {
+      return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+    }
+    
+    final duration = flight.arrivalTime.difference(flight.departureTime);
+    final durationStr = '${duration.inHours}h ${duration.inMinutes % 60}m';
+    
     return GestureDetector(
       onTap: () {
-        context.push('/seats'); // Navigate to seat selection
+        // Save the selected flight to the global provider, then move to Seat Selection
+        context.read<BookingProvider>().selectFlight(flight);
+        context.push('/seats');
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -180,7 +224,7 @@ class FlightResultsScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      airline,
+                      flight.flightNumber,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
@@ -190,7 +234,7 @@ class FlightResultsScreen extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  price,
+                  '\$${flight.price.toStringAsFixed(0)}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: AppTheme.primaryBlue,
                     fontWeight: FontWeight.bold,
@@ -205,10 +249,13 @@ class FlightResultsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildTimeColumn(departureTime, 'NYC'),
+                _buildTimeColumn(
+                  formatTime(flight.departureTime), 
+                  (flight.departureCity.length > 3 ? flight.departureCity.substring(0,3) : flight.departureCity).toUpperCase()
+                ),
                 Column(
                   children: [
-                    Text(duration, style: const TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(durationStr, style: const TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Container(
                       width: 60,
@@ -219,7 +266,10 @@ class FlightResultsScreen extends StatelessWidget {
                     const Text('Direct', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12)),
                   ],
                 ),
-                _buildTimeColumn(arrivalTime, 'LHR'),
+                _buildTimeColumn(
+                  formatTime(flight.arrivalTime), 
+                  (flight.destinationCity.length > 3 ? flight.destinationCity.substring(0,3) : flight.destinationCity).toUpperCase()
+                ),
               ],
             ),
           ],
