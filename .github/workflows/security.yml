@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  # 🔐 JOB 1: Secret Scanning
+  #  JOB 1: Secret Scanning
   security_scan:
     name: Scan for Secrets
     runs-on: ubuntu-latest
@@ -27,7 +27,7 @@ jobs:
           head: HEAD
           extra_args: --only-verified
 
-  # 🟢 JOB 2: Flutter Checks
+  #  JOB 2: Flutter Checks
   flutter_check:
     name: Flutter Lint, Test & Build
     runs-on: ubuntu-latest
@@ -53,12 +53,7 @@ jobs:
 
       - name: Build APK
         run: flutter build apk --release
-
-  # 🟡 JOB 3: Backend Security
-  backend_security:
-    name: Backend Security Scan
-    runs-on: ubuntu-latest
-    needs: flutter_check  
+ 
 
     steps:
       - name: Checkout code
