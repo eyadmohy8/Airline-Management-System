@@ -1,11 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import '../../services/auth_service.dart';
 
 
 
-class LoginScreen extends StatelessWidget {
-const LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool _isLoading = false;
+  final AuthService _authService = AuthService();
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      if (userCredential != null && mounted) {
+        context.go('/search');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to sign in: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,16 +84,16 @@ const LoginScreen({super.key});
                   textAlign: TextAlign.center,
                 ),
                 const Spacer(flex: 3),
-                _buildSocialButton(
-                  context,
-                  icon: FontAwesomeIcons.google,
-                  label: 'Continue with Google',
-                  backgroundColor: Colors.white,
-                  textColor: Colors.black87,
-                  onPressed: () {
-                    context.go('/search');
-                  },
-                ),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                    : _buildSocialButton(
+                        context,
+                        icon: FontAwesomeIcons.google,
+                        label: 'Continue with Google',
+                        backgroundColor: Colors.white,
+                        textColor: Colors.black87,
+                        onPressed: _handleGoogleSignIn,
+                      ),
                 const SizedBox(height: 16),
                 _buildSocialButton(
                   context,

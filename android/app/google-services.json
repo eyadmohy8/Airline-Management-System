@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1083740553108",
+    "firebase_url": "https://airline-9ff31-default-rtdb.firebaseio.com",
+    "project_id": "airline-9ff31",
+    "storage_bucket": "airline-9ff31.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1083740553108:android:fddbc9a56e790d84c25981",
+        "android_client_info": {
+          "package_name": "com.airline.airline"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1083740553108-s7mbfheqenjkukgo7rml7vd29u4gkgss.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.airline.airline",
+            "certificate_hash": "85f0091210b0d07d83e2dfbab94fa9f7b03a0ab2"
+          }
+        },
+        {
+          "client_id": "1083740553108-hvdk17arfubhssng53gum76ior2mclgf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD85KXlIx074XLEZyxNjfoes9QvzYMKAw4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1083740553108-hvdk17arfubhssng53gum76ior2mclgf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
