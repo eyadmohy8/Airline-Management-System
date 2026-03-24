@@ -89,9 +89,9 @@ class _PassengerDetailsScreenState extends State<PassengerDetailsScreen> {
       await batch.commit();
 
       if (mounted) {
-        provider.clearBooking();
+        // provider.clearBooking(); // Do not clear yet, so confirmation screen can show details
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking Successful!')));
-        context.go('/search');
+        context.go('/booking_confirmation');
       }
     } catch (e) {
       if (mounted) {

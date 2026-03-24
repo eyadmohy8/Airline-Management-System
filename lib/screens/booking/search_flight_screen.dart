@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/theme.dart';
+import '../../services/security_service.dart';
 
 class SearchFlightScreen extends StatefulWidget {
   const SearchFlightScreen({super.key});
@@ -73,10 +73,35 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
                   ),
                 ],
               ),
-              const CircleAvatar(
-                radius: 24,
-                backgroundColor: AppTheme.accentGold,
-                child: Icon(Icons.person, color: Colors.white),
+              GestureDetector(
+                onTap: () async {
+                  final logout = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Logout'),
+                      content: const Text('Are you sure you want to logout?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true), 
+                          child: const Text('Logout', style: TextStyle(color: Colors.red))
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (logout == true) {
+                    await FirebaseAuth.instance.signOut();
+                    await SecurityService().clearSession();
+                    if (!mounted) return;
+                    context.go('/login');
+                  }
+                },
+                child: const CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppTheme.accentGold,
+                  child: Icon(Icons.person, color: Colors.white),
+                ),
               )
             ],
           ),

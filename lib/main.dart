@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'providers/booking_provider.dart';
@@ -51,13 +52,13 @@ Future<void> seedDatabase() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp();
   
   seedDatabase(); // Temporary auto-seeder
 
   GoogleSignIn.instance.initialize(
     serverClientId: '612324582325-mvsjv3k2f7cftbuneim6oe9j2e9ee1hj.apps.googleusercontent.com',
-    scopes: ['email', 'profile', 'openid'],
   );
 
   runApp(const AeroLineApp());

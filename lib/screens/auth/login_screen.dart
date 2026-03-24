@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../services/security_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,44 +14,39 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(); // Keep if needed for other things, but usually not
+  // Removed _passwordController
 
   bool _isLoading = false;
 
-  Future<void> _login() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        if (mounted) context.go('/search');
-      } on FirebaseAuthException catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Login failed')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
-    }
-  }
+  // Removed _login method
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      
+      // For Google Sign-In 7.2.0, we need to explicitly authorize scopes to get the access token
+      final GoogleSignInClientAuthorization authz = await googleUser.authorizationClient.authorizeScopes([
+        'email',
+        'profile',
+        'openid',
+      ]);
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
+        accessToken: authz.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+      if (user != null) {
+        await SecurityService().saveUserSession(
+          userId: user.uid,
+          idToken: googleAuth.idToken,
+        );
+      }
       if (mounted) context.go('/search');
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -74,7 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -82,6 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -118,50 +115,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                    const SizedBox(height: 48),
                   
-                  // Email & Password
-                  _buildTextField('Email', Icons.email, _emailController, TextInputType.emailAddress),
-                   const SizedBox(height: 16),
-                  _buildTextField('Password', Icons.lock, _passwordController, TextInputType.visiblePassword, true),
-                   const SizedBox(height: 32),
-
                   if (_isLoading)
                      const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
-                  else
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD4AF37),
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: _login,
-                      child: const Text('Login', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  else ...[
+                    // Removed Email & Password fields and Login button
+                     const SizedBox(height: 24),
+                    
+                    _buildSocialButton(
+                      context,
+                      icon: FontAwesomeIcons.google,
+                      label: 'Continue with Google',
+                      backgroundColor: Colors.white,
+                      textColor: Colors.black87,
+                      onPressed: _signInWithGoogle,
                     ),
-                  
-                   const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () => context.go('/register'),
-                    child: const Text("Don't have an account? Register", style: TextStyle(color: Colors.white70)),
-                  ),
-                   const SizedBox(height: 24),
-                  
-                  _buildSocialButton(
-                    context,
-                    icon: FontAwesomeIcons.google,
-                    label: 'Continue with Google',
-                    backgroundColor: Colors.white,
-                    textColor: Colors.black87,
-                    onPressed: _signInWithGoogle,
-                  ),
-                   const SizedBox(height: 16),
-                  _buildSocialButton(
-                    context,
-                    icon: FontAwesomeIcons.apple,
-                    label: 'Continue with Apple',
-                    backgroundColor: Colors.black,
-                    textColor: Colors.white,
-                    onPressed: () => context.go('/search'),
-                  ),
+                     const SizedBox(height: 16),
+                    _buildSocialButton(
+                      context,
+                      icon: FontAwesomeIcons.apple,
+                      label: 'Continue with Apple',
+                      backgroundColor: Colors.black,
+                      textColor: Colors.white,
+                      onPressed: () => context.go('/search'),
+                    ),
+                  ],
                    const SizedBox(height: 24),
                 ],
               ),
@@ -172,39 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTextField(String label, IconData icon, TextEditingController controller, [TextInputType type = TextInputType.text, bool isPassword = false]) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: type,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.white70),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.white30),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Color(0xFFD4AF37)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.redAccent),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.redAccent),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) return 'Please enter $label';
-        return null;
-      },
-    );
-  }
 
   Widget _buildSocialButton(BuildContext context, {required IconData icon, required String label, required Color backgroundColor, required Color textColor, required VoidCallback onPressed}) {
     return ElevatedButton(
