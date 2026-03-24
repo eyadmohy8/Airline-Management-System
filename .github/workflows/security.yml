@@ -2,7 +2,7 @@ name: Secure Build Pipeline
 
 on:
   push:
-    branches: ["main", "develop", "feature/booking"]
+    branches: ["main", "develop"]
   pull_request:
     branches: ["main", "develop"]
 
@@ -33,14 +33,14 @@ jobs:
 
       - name: Install & Analyze (Safe Mode)
         run: |
-          # التأكد إننا واقفين في المكان الصح اللي فيه الـ pubspec.yaml
+        
           flutter pub get || echo "Dependencies failed but continuing..."
           flutter analyze --no-fatal-warnings || echo "Analysis has warnings but continuing..."
 
   
       - name: Build Release APK
         run: |
-          # الـ || true بتخلي الخطوة تنجح (تدي صح) حتى لو فيه Error بسيط في الكود
+      
           flutter build apk --release || echo "Build failed, check code logic"
 
        
