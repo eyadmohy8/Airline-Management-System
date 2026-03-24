@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: ["main", "develop"]
 
-# أهم جزء: إعطاء صلاحيات كاملة للـ Pipeline عشان ما يديش X بسبب الـ Permissions
+
 permissions:
   contents: write
   security-events: write
@@ -19,13 +19,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. فحص أمني "يدوي" بسيط (عشان TruffleHog ما يعملش مشاكل)
+    
       - name: Simple Security Scan
         run: |
           echo "Scanning for sensitive files..."
           find . -name "*.pem" -o -name "*.key" | grep . && echo "Warning: Keys found" || echo "Clear"
 
-      # 2. تجهيز فلاتر مع التأكد من وجود الملفات
+    
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -37,22 +37,22 @@ jobs:
           flutter pub get || echo "Dependencies failed but continuing..."
           flutter analyze --no-fatal-warnings || echo "Analysis has warnings but continuing..."
 
-      # 3. بناء الـ APK (الهدف الأساسي)
+  
       - name: Build Release APK
         run: |
           # الـ || true بتخلي الخطوة تنجح (تدي صح) حتى لو فيه Error بسيط في الكود
           flutter build apk --release || echo "Build failed, check code logic"
 
-      # 4. رفع الـ APK (عشان تضمن إنك استلمت شغل)
+       
       - name: Save APK
         uses: actions/upload-artifact@v4
-        if: always() # خلي الخطوة دي تشتغل دائماً حتى لو اللي قبلها فشل
+        if: always()
         with:
           name: App-Package
           path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: warn
 
-  # Job منفصلة للـ Backend عشان لو فشلت ما تبوظش الـ Flutter
+   
   backend_job:
     runs-on: ubuntu-latest
     steps:
