@@ -7,6 +7,10 @@ on:
     branches: ["main", "develop"]
 
 
+
+
+
+
 permissions:
   contents: write
   security-events: write
